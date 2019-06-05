@@ -204,10 +204,10 @@ class Table implements TableInterface
 		$outer       = 1;
 		$outerCount  = count($conditions);
 		foreach ($conditions as $chunk) {
-			$relation = $this->parseRelation($where['relation']);
+			$relation = $this->parseRelation($where['relation'] ?? '');
 			if ( ! empty(array_filter($chunk, 'is_array'))) {
 				$whereString   .= '(';
-				$innerRelation = $this->parseRelation($chunk['relation']);
+				$innerRelation = $this->parseRelation($chunk['relation'] ?? '');
 				$inner         = 1;
 				$innerCount    = count($chunk);
 				foreach ($chunk as $item) {
