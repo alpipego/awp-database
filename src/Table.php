@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace Alpipego\AWP\Database;
 
+use Alpipego\AWP\Database\Exceptions\DatabaseException;
 use wpdb;
 
 class Table implements TableInterface
@@ -17,8 +18,9 @@ class Table implements TableInterface
 	 */
 	protected $table;
 	protected $sort = [];
-	protected $limit = [];
+	protected $limit;
 	protected $where = [];
+	protected $join = [];
 
 	public function __construct(string $table, wpdb $db)
 	{
@@ -31,21 +33,21 @@ class Table implements TableInterface
 		return $this->table;
 	}
 
-	public function sort(string $sort)
+	public function sort(string $sort) : TableInterface
 	{
 		$this->sort[] = $sort;
 
 		return $this;
 	}
 
-	public function limit(string $limit)
+	public function limit(int $limit) : TableInterface
 	{
-		$this->limit[] = $limit;
+		$this->limit = $limit;
 
 		return $this;
 	}
 
-	public function where(array $where)
+	public function where(array $where) : TableInterface
 	{
 		$this->where[] = $where;
 
@@ -58,36 +60,36 @@ class Table implements TableInterface
 		return (int)$this->db->get_var($this->query([
 			'fields' => ['count(*)'],
 			'where'  => $this->parseWhere($where),
-			'limit'  => PHP_INT_MAX,
+			'limit'  => $this->parseLimit(0, PHP_INT_MAX),
 		]));
 	}
 
-	public function get_results(array $fields = ['*'], array $where = [], int $limit = null) : array
+	public function get_results(array $fields = ['*'], array $where = [], int $limit = null, int $offset = 0) : array
 	{
 		// "SELECT ${fields} FROM {$this->table} WHERE ${where} LIMIT ${limit};"
-		return $this->db->get_results([
+		return $this->db->get_results($this->query([
 				'fields' => $fields,
 				'where'  => $this->parseWhere($where),
-				'limit'  => is_null($limit) ? '' : ' LIMIT ' . $limit,
-			], ARRAY_A) ?? [];
+				'limit'  => (is_null($limit) && empty($offset)) ? null : $this->parseLimit($offset, $limit),
+			]), ARRAY_A) ?? [];
 	}
 
 	public function get_col(string $field, array $where = []) : array
 	{
 		// "SELECT ${field} FROM {$this->table} WHERE ${where};"
-		return $this->db->get_col([
+		return $this->db->get_col($this->query([
 				'fields' => [$field],
 				'where'  => $this->parseWhere($where),
-			]) ?? [];
+			])) ?? [];
 	}
 
 	public function get_cols(array $fields, array $where = []) : array
 	{
 		// "SELECT ${fields} FROM {$this->table} WHERE ${where};"
-		return $this->db->get_results([
+		return $this->db->get_results($this->query([
 				'fields' => $fields,
 				'where'  => $this->parseWhere($where),
-			], ARRAY_A) ?? [];
+			]), ARRAY_A) ?? [];
 	}
 
 	public function get_row(array $where) : array
@@ -99,12 +101,12 @@ class Table implements TableInterface
 
 	}
 
-	public function get_rows(array $where = [], int $limit = null) : array
+	public function get_rows(array $where = [], int $limit = null, int $offset = 0) : array
 	{
 		// "SELECT * FROM {$this->table} WHERE ${where} LIMIT ${limit};"
 		return $this->db->get_results($this->query([
 				'where' => $this->parseWhere($where),
-				'limit' => is_null($limit) ? '' : ' LIMIT ' . $limit,
+				'limit' => (is_null($limit) && empty($offset)) ? null : $this->parseLimit($offset, $limit),
 			]), ARRAY_A) ?? [];
 	}
 
@@ -160,6 +162,22 @@ class Table implements TableInterface
 
 		$fields = implode(', ', $fields);
 		$where  = ! empty($where) ? $where : '1=1';
+
+		$this->sort[] = $orderby;
+		$this->sort   = array_filter($this->sort);
+		if ( ! empty($this->sort)) {
+			$orderby = 'ORDER BY ' . implode(', ', $this->sort);
+		}
+
+		if (is_null($limit)) {
+			$limit = is_null($this->limit) ? '' : ' LIMIT ' . $this->limit;
+		}
+
+		$this->join[] = $join;
+		$this->join = array_filter($this->join);
+		if (empty($join)) {
+			$join = implode(' ', $this->join);
+		}
 
 		$query = "SELECT ${distinct} ${fields} FROM {$this->table} ${join} WHERE ${where} ${groupby} ${orderby} ${limit}";
 
@@ -234,5 +252,43 @@ class Table implements TableInterface
 		$relation = strtoupper((string)$relation);
 
 		return in_array($relation, ['AND', 'OR']) ? $relation : 'AND';
+	}
+
+	private function parseLimit(int $offset, int $limit = null) : string
+	{
+		if (is_null($limit)) {
+			if (is_null($this->limit)) {
+				return '';
+
+			}
+
+			$limit = $this->limit;
+		}
+
+		return sprintf(' LIMIT %d OFFSET %d', $limit, $offset);
+	}
+
+	public function lastQuery() : string
+	{
+		return is_array($this->db->last_query) ? end($this->db->last_query) : $this->db->last_query;
+	}
+
+	public function join(string $table, string $outerField, string $innerField, string $compare = '=', string $direction = 'inner') : TableInterface
+	{
+		$allowedJoins = ['inner', 'outer', 'left', 'right'];
+		if ( ! in_array($direction, $allowedJoins)) {
+			throw new DatabaseException(
+				sprintf('$direction has to be one of: %s. %s given', implode(', ', $allowedJoins), $direction)
+			);
+		}
+
+		$this->join[] = sprintf(' %s JOIN %s ON %s %s %s', strtoupper($direction), $table, $innerField, $compare, $outerField);
+
+		return $this;
+	}
+
+	public function reset() : TableInterface
+	{
+		return new self($this->table, $this->db);
 	}
 }
