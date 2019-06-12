@@ -174,7 +174,7 @@ class Table implements TableInterface
 		}
 
 		$this->join[] = $join;
-		$this->join = array_filter($this->join);
+		$this->join   = array_filter($this->join);
 		if (empty($join)) {
 			$join = implode(' ', $this->join);
 		}
@@ -186,25 +186,25 @@ class Table implements TableInterface
 
 	protected function parseWhere(array $where) : string
 	{
-		if (empty(array_filter($where, 'is_array'))) {
+		if ( ! empty($where) && empty(array_filter($where, 'is_array'))) {
 			$parsed   = [];
 			$parsed[] = [
-				'field'   => $where[0],
-				'value'   => $where[1],
+				'field'   => $where[0] ?? '',
+				'value'   => $where[1] ?? '',
 				'compare' => $where[2] ?? '=',
 			];
 			$where    = $parsed;
 		}
 
 		if ( ! empty($this->where)) {
-			array_push($where, $this->where);
+			$where = array_merge($where, $this->where);
 		}
 
 		$parser      = function ($chunk) {
 			$field   = $chunk['field'] ?? $chunk[0] ?? '';
 			$value   = $chunk['value'] ?? $chunk[1] ?? '';
 			$compare = $chunk['compare'] ?? $chunk[2] ?? '=';
-			if (empty($field) || empty($value)) {
+			if (empty($field)) {
 				return false;
 			}
 			$type = '%s';
@@ -229,12 +229,19 @@ class Table implements TableInterface
 				$inner         = 1;
 				$innerCount    = count($chunk);
 				foreach ($chunk as $item) {
-					$whereString .= $parser($item);
+					$parsedItem = $parser($item);
+					if ( ! $parsedItem) {
+						continue;
+					}
+					$whereString .= $parsedItem;
 					if ($innerCount !== $inner++) {
 						$whereString .= sprintf(' %s ', $innerRelation);
 					}
 				}
 				$whereString .= ')';
+				if ($outerCount !== $outer++) {
+					$whereString .= sprintf(' %s ', $relation);
+				}
 				continue;
 			}
 
@@ -259,7 +266,6 @@ class Table implements TableInterface
 		if (is_null($limit)) {
 			if (is_null($this->limit)) {
 				return '';
-
 			}
 
 			$limit = $this->limit;
