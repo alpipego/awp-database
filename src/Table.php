@@ -58,9 +58,10 @@ class Table implements TableInterface
 	{
 		// "SELECT * FROM {$this->table} WHERE $where;"
 		return (int)$this->db->get_var($this->query([
-			'fields' => ['count(*)'],
-			'where'  => $this->parseWhere($where),
-			'limit'  => $this->parseLimit(0, PHP_INT_MAX),
+			'fields'  => ['count(*)'],
+			'where'   => $this->parseWhere($where),
+			'limit'   => $this->parseLimit(0, PHP_INT_MAX),
+			'orderby' => null,
 		]));
 	}
 
@@ -114,8 +115,9 @@ class Table implements TableInterface
 	{
 		// "SELECT ${field} FROM {$this->table} WHERE ${where};"
 		return $this->db->get_var([
-			'fields' => [$field],
-			'where'  => $this->parseWhere($where),
+			'fields'  => [$field],
+			'where'   => $this->parseWhere($where),
+			'orderby' => null,
 		]);
 	}
 
@@ -163,10 +165,12 @@ class Table implements TableInterface
 		$fields = implode(', ', $fields);
 		$where  = ! empty($where) ? $where : '1=1';
 
-		$this->sort[] = $orderby;
-		$this->sort   = array_filter($this->sort);
-		if ( ! empty($this->sort)) {
-			$orderby = 'ORDER BY ' . implode(', ', $this->sort);
+		if ( ! is_null($orderby)) {
+			$this->sort[] = $orderby;
+			$this->sort   = array_filter($this->sort);
+			if ( ! empty($this->sort)) {
+				$orderby = 'ORDER BY ' . implode(', ', $this->sort);
+			}
 		}
 
 		if (is_null($limit)) {
