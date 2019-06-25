@@ -114,11 +114,11 @@ class Table implements TableInterface
 	public function get_var(string $field, array $where)
 	{
 		// "SELECT ${field} FROM {$this->table} WHERE ${where};"
-		return $this->db->get_var([
+		return $this->db->get_var($this->query([
 			'fields'  => [$field],
 			'where'   => $this->parseWhere($where),
 			'orderby' => null,
-		]);
+		]));
 	}
 
 	public function insert(array $data, array $format = null)
