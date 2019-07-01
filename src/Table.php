@@ -65,13 +65,14 @@ class Table implements TableInterface
 		]));
 	}
 
-	public function get_results(array $fields = ['*'], array $where = [], int $limit = null, int $offset = 0) : array
+	public function get_results(array $fields = ['*'], array $where = [], int $limit = null, int $offset = 0, array $groupby = []) : array
 	{
 		// "SELECT ${fields} FROM {$this->table} WHERE ${where} LIMIT ${limit};"
 		return $this->db->get_results($this->query([
-				'fields' => $fields,
-				'where'  => $this->parseWhere($where),
-				'limit'  => (is_null($limit) && empty($offset)) ? null : $this->parseLimit($offset, $limit),
+				'fields'  => $fields,
+				'where'   => $this->parseWhere($where),
+				'limit'   => (is_null($limit) && empty($offset)) ? null : $this->parseLimit($offset, $limit),
+				'groupby' => $this->parseGroupBy($groupby),
 			]), ARRAY_A) ?? [];
 	}
 
@@ -313,6 +314,11 @@ class Table implements TableInterface
 		$relation = strtoupper((string)$relation);
 
 		return in_array($relation, ['AND', 'OR']) ? $relation : 'AND';
+	}
+
+	private function parseGroupBy(array $group) : string
+	{
+		return sprintf(' GROUP BY %s', implode(',', $group));
 	}
 
 	private function parseLimit(int $offset, int $limit = null) : string

@@ -16,7 +16,7 @@ interface TableInterface
 
 	public function count(array $where = []) : int;
 
-	public function get_results(array $fields = ['*'], array $where = [], int $limit = null, int $offset = 0) : array;
+	public function get_results(array $fields = ['*'], array $where = [], int $limit = null, int $offset = 0, array $groupby = []) : array;
 
 	public function get_col(string $field, array $where = []) : array;
 
