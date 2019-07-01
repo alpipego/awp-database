@@ -121,6 +121,54 @@ class Table implements TableInterface
 		]));
 	}
 
+	public function save(array $data, array $where = null, array $format = null, array $whereFormat = null)
+	{
+		if ( ! is_null($where) && ! empty($this->get_row($where))) {
+			return $this->update($data, $where, $format, $whereFormat);
+		}
+		$format      = $format ?? [];
+		$formatCount = count($format);
+		$format      = array_merge($format, array_fill($formatCount, (count($data) - $formatCount), ''));
+		$i           = 0;
+		foreach ($data as $value) {
+			$numbered = $i++;
+			if (is_null($value)) {
+				$format[$numbered] = 'NULL';
+				continue;
+			}
+			if ( ! empty($format[$numbered])) {
+				continue;
+			}
+			if (is_numeric($value) && is_string($value)) {
+				if (strpos($value, '.') || strpos($value, ',')) {
+					$format[$numbered] = '%F';
+					continue;
+				}
+				if ((int)$value == $value) {
+					$format[$numbered] = '%d';
+					continue;
+				}
+			}
+
+			$format[$numbered] = '%s';
+		}
+
+		$fields       = array_keys($data);
+		$values       = array_values($data);
+		$format       = array_values($format);
+		$fieldsString = '`' . implode('`, `', $fields) . '`';
+		$valuesString = $this->db->prepare(implode(',', $format), $values);
+
+		$updateString = '';
+		for ($i = 0; $i < count($values); $i++) {
+			$updateString .= sprintf('`%s`="%' . $format[$i] . '",', $fields[$i]);
+		}
+		$updateString = rtrim($updateString, ',');
+		$updateString = $this->db->prepare($updateString, $values);
+
+		return $this->db->query("INSERT INTO {$this->table} ({$fieldsString}) VALUES ({$valuesString}) ON DUPLICATE KEY UPDATE {$updateString};");
+	}
+
 	public function insert(array $data, array $format = null)
 	{
 		return $this->db->insert($this->table, $data, $format);
@@ -136,7 +184,7 @@ class Table implements TableInterface
 		return $this->db->update($this->table, $data, $where, $format, $whereFormat);
 	}
 
-	public function delete(array $where, array $format)
+	public function delete(array $where, array $format = null)
 	{
 		return $this->db->delete($this->table, $where, $format);
 	}
@@ -280,7 +328,7 @@ class Table implements TableInterface
 
 	public function lastQuery() : string
 	{
-		return is_array($this->db->last_query) ? end($this->db->last_query) : $this->db->last_query;
+		return is_array($this->db->last_query) ? end($this->db->last_query) : (string)$this->db->last_query;
 	}
 
 	public function join(string $table, string $outerField, string $innerField, string $compare = '=', string $direction = 'inner') : TableInterface
