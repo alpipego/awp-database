@@ -36,6 +36,8 @@ interface TableInterface
 
 	public function delete(array $where, array $format);
 
+	public function save(array $data, array $where = null, array $format = null, array $whereFormat = null);
+
 	public function query(array $args = []);
 
 	public function lastQuery() : string;
