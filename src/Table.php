@@ -275,11 +275,13 @@ class Table implements TableInterface
 		$outerCount  = count($conditions);
 		foreach ($conditions as $chunk) {
 			$relation = $this->parseRelation($where['relation'] ?? '');
+			unset($where['relation']);
 			if ( ! empty(array_filter($chunk, 'is_array'))) {
 				$whereString   .= '(';
 				$innerRelation = $this->parseRelation($chunk['relation'] ?? '');
-				$inner         = 1;
-				$innerCount    = count($chunk);
+				unset($chunk['relation']);
+				$inner      = 1;
+				$innerCount = count($chunk);
 				foreach ($chunk as $item) {
 					$parsedItem = $parser($item);
 					if ( ! $parsedItem) {
