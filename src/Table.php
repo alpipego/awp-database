@@ -318,7 +318,7 @@ class Table implements TableInterface
 
 	private function parseGroupBy(array $group) : string
 	{
-		return sprintf(' GROUP BY %s', implode(',', $group));
+		return empty($group) ? '' : sprintf(' GROUP BY %s', implode(',', $group));
 	}
 
 	private function parseLimit(int $offset, int $limit = null) : string
