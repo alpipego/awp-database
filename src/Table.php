@@ -100,7 +100,6 @@ class Table implements TableInterface
 		return $this->db->get_row($this->select([
 				'where' => $this->parseWhere($where),
 			]), ARRAY_A) ?? [];
-
 	}
 
 	public function get_rows(array $where = [], int $limit = null, int $offset = 0) : array
@@ -194,7 +193,7 @@ class Table implements TableInterface
 	{
 		/**
 		 * @var string $distinct
-		 * @var array $fields
+		 * @var array  $fields
 		 * @var string $join
 		 * @var string $where
 		 * @var string $groupby
@@ -356,5 +355,10 @@ class Table implements TableInterface
 	public function reset() : TableInterface
 	{
 		return new self($this->table, $this->db);
+	}
+
+	public function query(string $query)
+	{
+		return $this->db->query($query);
 	}
 }

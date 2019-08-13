@@ -43,4 +43,6 @@ interface TableInterface
 	public function lastQuery() : string;
 
 	public function reset() : self;
+
+	public function query(string $query);
 }
