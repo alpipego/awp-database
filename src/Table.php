@@ -57,7 +57,7 @@ class Table implements TableInterface
 	public function count(array $where = []) : int
 	{
 		// "SELECT * FROM {$this->table} WHERE $where;"
-		return (int)$this->db->get_var($this->query([
+		return (int)$this->db->get_var($this->select([
 			'fields'  => ['count(*)'],
 			'where'   => $this->parseWhere($where),
 			'limit'   => $this->parseLimit(0, PHP_INT_MAX),
@@ -68,7 +68,7 @@ class Table implements TableInterface
 	public function get_results(array $fields = ['*'], array $where = [], int $limit = null, int $offset = 0, array $groupby = []) : array
 	{
 		// "SELECT ${fields} FROM {$this->table} WHERE ${where} LIMIT ${limit};"
-		return $this->db->get_results($this->query([
+		return $this->db->get_results($this->select([
 				'fields'  => $fields,
 				'where'   => $this->parseWhere($where),
 				'limit'   => (is_null($limit) && empty($offset)) ? null : $this->parseLimit($offset, $limit),
@@ -79,7 +79,7 @@ class Table implements TableInterface
 	public function get_col(string $field, array $where = []) : array
 	{
 		// "SELECT ${field} FROM {$this->table} WHERE ${where};"
-		return $this->db->get_col($this->query([
+		return $this->db->get_col($this->select([
 				'fields' => [$field],
 				'where'  => $this->parseWhere($where),
 			])) ?? [];
@@ -88,7 +88,7 @@ class Table implements TableInterface
 	public function get_cols(array $fields, array $where = []) : array
 	{
 		// "SELECT ${fields} FROM {$this->table} WHERE ${where};"
-		return $this->db->get_results($this->query([
+		return $this->db->get_results($this->select([
 				'fields' => $fields,
 				'where'  => $this->parseWhere($where),
 			]), ARRAY_A) ?? [];
@@ -97,7 +97,7 @@ class Table implements TableInterface
 	public function get_row(array $where) : array
 	{
 		// "SELECT * FROM {$this->table} WHERE ${where};"
-		return $this->db->get_row($this->query([
+		return $this->db->get_row($this->select([
 				'where' => $this->parseWhere($where),
 			]), ARRAY_A) ?? [];
 
@@ -106,7 +106,7 @@ class Table implements TableInterface
 	public function get_rows(array $where = [], int $limit = null, int $offset = 0) : array
 	{
 		// "SELECT * FROM {$this->table} WHERE ${where} LIMIT ${limit};"
-		return $this->db->get_results($this->query([
+		return $this->db->get_results($this->select([
 				'where' => $this->parseWhere($where),
 				'limit' => (is_null($limit) && empty($offset)) ? null : $this->parseLimit($offset, $limit),
 			]), ARRAY_A) ?? [];
@@ -115,7 +115,7 @@ class Table implements TableInterface
 	public function get_var(string $field, array $where)
 	{
 		// "SELECT ${field} FROM {$this->table} WHERE ${where};"
-		return $this->db->get_var($this->query([
+		return $this->db->get_var($this->select([
 			'fields'  => [$field],
 			'where'   => $this->parseWhere($where),
 			'orderby' => null,
@@ -190,7 +190,7 @@ class Table implements TableInterface
 		return $this->db->delete($this->table, $where, $format);
 	}
 
-	public function query(array $args = [])
+	public function select(array $args = [])
 	{
 		/**
 		 * @var string $distinct
