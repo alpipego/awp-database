@@ -38,9 +38,11 @@ interface TableInterface
 
 	public function save(array $data, array $where = null, array $format = null, array $whereFormat = null);
 
-	public function query(array $args = []);
+	public function select(array $args = []);
 
 	public function lastQuery() : string;
 
 	public function reset() : self;
+
+	public function query(string $query);
 }
