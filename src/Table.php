@@ -60,7 +60,7 @@ class Table implements TableInterface
 		return (int)$this->db->get_var($this->select([
 			'fields'  => ['count(*)'],
 			'where'   => $this->parseWhere($where),
-			'limit'   => $this->parseLimit(0, PHP_INT_MAX),
+			'limit'   => null,
 			'orderby' => null,
 		]));
 	}
