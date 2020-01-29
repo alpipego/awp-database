@@ -246,7 +246,7 @@ class Table implements TableInterface
 			$parsed   = [];
 			$parsed[] = [
 				'field'   => $where[0] ?? '',
-				'value'   => $where[1],
+				'value'   => $where[1] ?? null,
 				'compare' => $where[2] ?? '=',
 			];
 			$where    = $parsed;
@@ -257,8 +257,8 @@ class Table implements TableInterface
 		}
 
 		$parser      = function ($chunk) {
-			$field   = $chunk['field'] ?? $chunk[0];
-			$value   = $chunk['value'] ?? $chunk[1];
+			$field   = $chunk['field'] ?? $chunk[0] ?? null;
+			$value   = $chunk['value'] ?? $chunk[1] ?? null;
 			$compare = $chunk['compare'] ?? $chunk[2] ?? '=';
 			if (empty($field)) {
 				return false;
