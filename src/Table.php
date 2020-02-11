@@ -195,9 +195,9 @@ class Table implements TableInterface
 
 	public function select(array $args = [])
 	{
-        if (array_key_exists('where', $args) && is_array($args['where'])) {
-            $args['where'] = $this->parseWhere($args['where']);
-        }
+		if (array_key_exists('where', $args) && is_array($args['where'])) {
+			$args['where'] = $this->parseWhere($args['where']);
+		}
 		/**
 		 * @var string $distinct
 		 * @var array  $fields
@@ -266,18 +266,42 @@ class Table implements TableInterface
 			if (empty($field)) {
 				return false;
 			}
-			$type = '%s';
+			$getType = function ($value) {
+				if (is_int($value)) {
+					return '%d';
+				} elseif (is_float($value)) {
+					return '%F';
+				}
+
+				return '%s';
+			};
+
 			if (is_null($value)) {
+				if (in_array($compare, ['EXISTS', 'NOT EXISTS'], true)) {
+					return sprintf('%s %s', $field, $compare);
+				}
+
 				return sprintf('%s is %s null', $field, $compare === '=' ? '' : 'NOT');
 			}
-			if (is_int($value)) {
-				$type = '%d';
-			}
-			if (is_float($value)) {
-				$type = '%F';
+			if (is_array($value)) {
+				if (in_array($compare, ['IN', 'NOT IN'], true)) {
+					$values = implode(',', array_map(function ($item) use ($getType) {
+						$type = $getType($item);
+
+						return $type === '%s' ? '"%s"' : $type;
+					}, $value));
+
+					return vsprintf('%s %s (' . $values . ')', array_merge([$field, $compare], $value));
+				}
+				if (in_array($compare, ['BETWEEN', 'NOT BETWEEN'], true)) {
+					$lower = array_shift($value);
+					$upper = array_shift($value);
+
+					return sprintf('%s %s ' . $getType($lower) . ' AND ' . $getType($upper), $field, $compare, $lower, $upper);
+				}
 			}
 
-			return $this->db->prepare($field . ' ' . $compare . ' ' . $type, $value);
+			return $this->db->prepare($field . ' ' . $compare . ' ' . $getType($value), $value);
 		};
 		$whereString = '';
 		$conditions  = array_filter($where, 'is_array');
