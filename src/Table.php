@@ -59,7 +59,7 @@ class Table implements TableInterface
 		// "SELECT * FROM {$this->table} WHERE $where;"
 		return (int)$this->db->get_var($this->select([
 			'fields'  => ['count(*)'],
-			'where'   => $this->parseWhere($where),
+			'where'   => $where,
 			'limit'   => null,
 			'orderby' => null,
 		]));
@@ -70,7 +70,7 @@ class Table implements TableInterface
 		// "SELECT ${fields} FROM {$this->table} WHERE ${where} LIMIT ${limit};"
 		return $this->db->get_results($this->select([
 				'fields'  => $fields,
-				'where'   => $this->parseWhere($where),
+				'where'   => $where,
 				'limit'   => (is_null($limit) && empty($offset)) ? null : $this->parseLimit($offset, $limit),
 				'groupby' => $this->parseGroupBy($groupby),
 			]), ARRAY_A) ?? [];
@@ -81,7 +81,7 @@ class Table implements TableInterface
 		// "SELECT ${field} FROM {$this->table} WHERE ${where};"
 		return $this->db->get_col($this->select([
 				'fields' => [$field],
-				'where'  => $this->parseWhere($where),
+				'where'  => $where,
 			])) ?? [];
 	}
 
@@ -90,7 +90,7 @@ class Table implements TableInterface
 		// "SELECT ${fields} FROM {$this->table} WHERE ${where};"
 		return $this->db->get_results($this->select([
 				'fields' => $fields,
-				'where'  => $this->parseWhere($where),
+				'where'  => $where,
 			]), ARRAY_A) ?? [];
 	}
 
@@ -98,7 +98,7 @@ class Table implements TableInterface
 	{
 		// "SELECT * FROM {$this->table} WHERE ${where};"
 		return $this->db->get_row($this->select([
-				'where' => $this->parseWhere($where),
+				'where' => $where,
 			]), ARRAY_A) ?? [];
 	}
 
@@ -106,7 +106,7 @@ class Table implements TableInterface
 	{
 		// "SELECT * FROM {$this->table} WHERE ${where} LIMIT ${limit};"
 		return $this->db->get_results($this->select([
-				'where' => $this->parseWhere($where),
+				'where' => $where,
 				'limit' => (is_null($limit) && empty($offset)) ? null : $this->parseLimit($offset, $limit),
 			]), ARRAY_A) ?? [];
 	}
@@ -116,7 +116,7 @@ class Table implements TableInterface
 		// "SELECT ${field} FROM {$this->table} WHERE ${where};"
 		return $this->db->get_var($this->select([
 			'fields'  => [$field],
-			'where'   => $this->parseWhere($where),
+			'where'   => $where,
 			'orderby' => null,
 		]));
 	}
@@ -191,6 +191,9 @@ class Table implements TableInterface
 
 	public function select(array $args = [])
 	{
+        if (array_key_exists('where', $args) && is_array($args['where'])) {
+            $args['where'] = $this->parseWhere($args['where']);
+        }
 		/**
 		 * @var string $distinct
 		 * @var array  $fields
