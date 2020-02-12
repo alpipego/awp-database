@@ -124,11 +124,13 @@ class Table implements TableInterface
 	public function save(array $data, array $where = null, array $format = null, array $whereFormat = null)
 	{
 		$parsedWhere = [];
-		array_walk($where, function($value, $key) use (&$parsedWhere) {
-			$parsedWhere[] = [$key, $value];
-		});
-		if ( ! is_null($where) && ! empty($this->get_row($parsedWhere))) {
-			return $this->update($data, $where, $format, $whereFormat);
+		if (! is_null($where)) {
+			array_walk($where, function ($value, $key) use (&$parsedWhere) {
+				$parsedWhere[] = [$key, $value];
+			});
+			if (!empty($this->get_row($parsedWhere))) {
+				return $this->update($data, $where, $format, $whereFormat);
+			}
 		}
 		$format      = $format ?? [];
 		$formatCount = count($format);
