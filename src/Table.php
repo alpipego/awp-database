@@ -312,7 +312,7 @@ class Table implements TableInterface
 		foreach ($conditions as $chunk) {
 			$relation = $this->parseRelation($where['relation'] ?? '');
 			unset($where['relation']);
-			if ( ! empty(array_filter($chunk, 'is_array'))) {
+			if ( ! empty(array_filter($chunk, 'is_array')) && ! in_array(($chunk[2] ?? ''), ['IN', 'NOT IN'], true)) {
 				$whereString   .= '(';
 				$innerRelation = $this->parseRelation($chunk['relation'] ?? '');
 				unset($chunk['relation']);
